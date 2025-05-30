@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Feature Engineering</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        body {
+            background-color: #f0f2f5;
+            color: #212529;
+            padding: 2rem 1rem;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container {
+            max-width: 900px;
+            background-color: #fff;
+            padding: 2rem 2.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #0d6efd;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        h3 {
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            color: #0d6efd;
+            border-bottom: 2px solid #0d6efd;
+            padding-bottom: 0.3rem;
+        }
+        .form-switch {
+            padding-left: 2.5rem;
+            position: relative;
+            margin-bottom: 0.5rem;
+        }
+        .form-switch input[type="checkbox"] {
+            cursor: pointer;
+        }
+        .switch-label {
+            cursor: pointer;
+        }
+        .checkbox-columns {
+            max-height: 180px;
+            overflow-y: auto;
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            background-color: #fafafa;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem 2rem;
+        }
+        .checkbox-columns > div {
+            flex: 1 1 45%;
+            min-width: 150px;
+        }
+        .btn-group-select {
+            margin-bottom: 0.5rem;
+        }
+        .summary {
+            font-style: italic;
+            color: #6c757d;
+            margin-bottom: 1rem;
+        }
+        .unique-values-list {
+            max-height: 140px;
+            overflow-y: auto;
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            background-color: #fafafa;
+        }
+        .btn-submit {
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Feature Engineering</h1>
+
+    {% if message %}
+        <div class="alert alert-success" role="alert">{{ message }}</div>
+    {% endif %}
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        <!-- Méthode de normalisation -->
+        <h3>Colonnes numériques</h3>
+
+        <div class="mb-3">
+            <label for="normalization_method" class="form-label fw-semibold">Méthode de normalisation :</label>
+            <select name="normalization_method" id="normalization_method" class="form-select" required>
+                <option value="minmax">Min-Max</option>
+                <option value="standard">Standard (Z-score)</option>
+            </select>
+        </div>
+
+        <div class="btn-group btn-group-sm btn-group-select" role="group" aria-label="Sélection colonnes numériques">
+            <button type="button" class="btn btn-outline-primary" id="selectAllNumericBtn">Tout sélectionner</button>
+            <button type="button" class="btn btn-outline-secondary" id="deselectAllNumericBtn">Tout désélectionner</button>
+        </div>
+        <div class="checkbox-columns" id="numericColsGroup">
+            {% for col in numeric_cols %}
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" name="normalize_cols" value="{{ col }}" id="norm_{{ col }}">
+                    <label class="form-check-label switch-label" for="norm_{{ col }}">{{ col }}</label>
+                </div>
+            {% endfor %}
+        </div>
+        <p class="summary" id="numericSummary">0 colonnes sélectionnées</p>
+
+        <!-- Colonnes catégorielles -->
+        <h3>Colonnes catégorielles</h3>
+
+        <p><strong>Valeurs uniques :</strong></p>
+        <div class="unique-values-list mb-3">
+            <ul class="list-unstyled mb-0">
+                {% for col, vals in unique_values.items %}
+                    <li><strong>{{ col }}:</strong> {{ vals|join:", " }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="btn-group btn-group-sm btn-group-select" role="group" aria-label="Sélection colonnes catégorielles">
+            <button type="button" class="btn btn-outline-primary" id="selectAllCategoricalBtn">Tout sélectionner</button>
+            <button type="button" class="btn btn-outline-secondary" id="deselectAllCategoricalBtn">Tout désélectionner</button>
+        </div>
+        <div class="checkbox-columns" id="categoricalColsGroup">
+            {% for col in categorical_cols %}
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" name="dummy_cols" value="{{ col }}" id="dummy_{{ col }}">
+                    <label class="form-check-label switch-label" for="dummy_{{ col }}">{{ col }}</label>
+                </div>
+            {% endfor %}
+        </div>
+        <p class="summary" id="categoricalSummary">0 colonnes sélectionnées</p>
+
+        <button type="submit" class="btn btn-primary btn-submit w-100">Appliquer Feature Engineering</button>
+    </form>
+
+    <h3>Aperçu du dataset</h3>
+    <div class="table-responsive">
+        {{ data_preview|safe }}
+    </div>
+
+    <a href="{% url 'prediction' %}" class="btn btn-success mt-4 w-100">Aller à la prédiction</a>
+</div>
+
+<script>
+    // Met à jour le résumé du nombre de colonnes sélectionnées dans un groupe
+    function updateSummary(groupId, summaryId) {
+        const checkboxes = document.querySelectorAll(`#${groupId} input[type="checkbox"]`);
+        const summary = document.getElementById(summaryId);
+        const count = Array.from(checkboxes).filter(chk => chk.checked).length;
+        summary.textContent = `${count} colonne${count > 1 ? 's' : ''} sélectionnée${count > 1 ? 's' : ''}`;
+    }
+
+    // Sélectionne ou désélectionne toutes les checkbox d’un groupe
+    function toggleAllCheckboxes(groupId, selectAll) {
+        const checkboxes = document.querySelectorAll(`#${groupId} input[type="checkbox"]`);
+        checkboxes.forEach(chk => chk.checked = selectAll);
+        updateSummary(groupId, groupId === 'numericColsGroup' ? 'numericSummary' : 'categoricalSummary');
+    }
+
+    // Ajout des listeners sur les boutons et checkboxes
+    document.addEventListener('DOMContentLoaded', () => {
+        const numericGroupId = 'numericColsGroup';
+        const categoricalGroupId = 'categoricalColsGroup';
+
+        document.getElementById('selectAllNumericBtn').addEventListener('click', () => {
+            toggleAllCheckboxes(numericGroupId, true);
+        });
+        document.getElementById('deselectAllNumericBtn').addEventListener('click', () => {
+            toggleAllCheckboxes(numericGroupId, false);
+        });
+
+        document.getElementById('selectAllCategoricalBtn').addEventListener('click', () => {
+            toggleAllCheckboxes(categoricalGroupId, true);
+        });
+        document.getElementById('deselectAllCategoricalBtn').addEventListener('click', () => {
+            toggleAllCheckboxes(categoricalGroupId, false);
+        });
+
+        // Mise à jour dynamique au clic individuel
+        const numericCheckboxes = document.querySelectorAll(`#${numericGroupId} input[type="checkbox"]`);
+        numericCheckboxes.forEach(chk => {
+            chk.addEventListener('change', () => updateSummary(numericGroupId, 'numericSummary'));
+        });
+
+        const categoricalCheckboxes = document.querySelectorAll(`#${categoricalGroupId} input[type="checkbox"]`);
+        categoricalCheckboxes.forEach(chk => {
+            chk.addEventListener('change', () => updateSummary(categoricalGroupId, 'categoricalSummary'));
+        });
+
+        // Initial update
+        updateSummary(numericGroupId, 'numericSummary');
+        updateSummary(categoricalGroupId, 'categoricalSummary');
+    });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
