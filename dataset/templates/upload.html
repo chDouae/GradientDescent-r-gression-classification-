@@ -69,7 +69,9 @@
 
         <div class="card">
             <h2 class="section-title h4">Aperçu du Dataset (50 premières lignes)</h2>
-            <div class="table-responsive">{{ data_preview|safe }}</div>
+            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                {{ data_preview|safe }}
+            </div>
         </div>
 
         <div class="row">

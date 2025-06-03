@@ -10,6 +10,10 @@ import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('Agg')
 import os
+import re
+
+def slugify(text):
+    return re.sub(r'[^\w\-]+', '', text.lower().replace(' ', '_'))
 
 def generate_heatmap(request):
     dataset_encoded = request.session.get('dataset')
@@ -242,10 +246,9 @@ def prediction(request):
     }
 
     if request.method == 'POST':
-        action = request.POST.get('action')  # Soit 'predict' soit 'show_heatmap'
+        action = request.POST.get('action')  # 'predict' ou 'show_heatmap'
 
         if action == 'show_heatmap':
-            # Générer et afficher la heatmap
             heatmap_path = os.path.join('static', 'correlation_heatmap.png')
             if not os.path.exists('static'):
                 os.makedirs('static')
@@ -259,7 +262,6 @@ def prediction(request):
 
             context['heatmap_url'] = '/' + heatmap_path
             context['show_heatmap'] = True
-
             return render(request, 'prediction.html', context)
 
         elif action == 'predict':
@@ -268,21 +270,26 @@ def prediction(request):
             model_type = request.POST.get('model_type')
             alpha = float(request.POST.get('alpha', 0.01))
             iterations = int(request.POST.get('iterations', 1000))
-            input_values = request.POST.get('input_values', '')
+            test_size = float(request.POST.get('test_size', 0.2))
+            visualisation = request.POST.get('show_visualisation') == 'on'
 
+            input_values = []
             try:
-                input_array = np.array([float(x.strip()) for x in input_values.split(',')], dtype=np.float64)
-                if input_array.ndim == 1:
-                    input_array = input_array.reshape(1, -1)
-            except:
+                for feature in selected_features:
+                    slug_name = slugify(feature)
+                    val = request.POST.get(f'feature_value_{slug_name}')
+                    if val is None or val.strip() == '':
+                        raise ValueError(f"Valeur manquante pour {feature}")
+                    input_values.append(float(val))
+                input_array = np.array(input_values, dtype=np.float64).reshape(1, -1)
+            except Exception as e:
                 context.update({
-                    'error': "Format des valeurs à prédire invalide. Veuillez saisir des nombres séparés par des virgules.",
+                    'error': f"Erreur dans les valeurs d'entrée : {str(e)}",
                     'selected_features': selected_features,
                     'target': target,
                     'model_type': model_type,
                     'alpha': alpha,
-                    'iterations': iterations,
-                    'input_values': input_values
+                    'iterations': iterations
                 })
                 return render(request, 'prediction.html', context)
 
@@ -291,18 +298,25 @@ def prediction(request):
                 X_raw = X_raw.reshape(-1, 1)
             y = data[target].values
 
+            # Standardisation
             X_std, mean, std = standardize_features(X_raw)
             X = np.hstack([np.ones((X_std.shape[0], 1)), X_std])
             input_std = standardize_input(input_array, mean, std)
             input_with_bias = np.insert(input_std, 0, 1, axis=1).flatten()
 
+            # Split en train/test
+            m = X.shape[0]
+            split_index = int((1 - test_size) * m)
+            X_train, X_test = X[:split_index], X[split_index:]
+            y_train, y_test = y[:split_index], y[split_index:]
+
             theta = np.zeros(X.shape[1])
 
             if model_type == 'regression':
-                theta = gradient_descent(X, y, theta, alpha, iterations)
+                theta = gradient_descent(X_train, y_train, theta, alpha, iterations)
                 prediction_result = F_regression(input_with_bias, theta)
-                train_pred = F_regression(X, theta)
-                r2 = 1 - (np.sum((y - train_pred) ** 2) / np.sum((y - np.mean(y)) ** 2))
+                y_pred = F_regression(X_test, theta)
+                r2 = 1 - (np.sum((y_test - y_pred) ** 2) / np.sum((y_test - np.mean(y_test)) ** 2))
 
                 context.update({
                     'prediction': prediction_result,
@@ -313,13 +327,22 @@ def prediction(request):
             elif model_type == 'classification':
                 y_bin = np.array(y)
                 if not set(np.unique(y_bin)).issubset({0, 1}):
-                    context['error'] = "Pour la classification, la cible doit être binaire (0/1)."
+                    context.update({
+                        'error': "Pour la classification, la cible doit être binaire (0/1).",
+                        'selected_features': selected_features,
+                        'target': target,
+                        'model_type': model_type,
+                        'alpha': alpha,
+                        'iterations': iterations,
+                        'input_values': input_values
+                    })
                     return render(request, 'prediction.html', context)
 
-                theta = gradient_descent_logistic(X, y_bin, theta, alpha, iterations)
+                theta = gradient_descent_logistic(X_train, y_train, theta, alpha, iterations)
                 prob = F_logistic(input_with_bias, theta)
                 prediction_result = int(prob >= 0.5)
-                accuracy = np.mean((F_logistic(X, theta) >= 0.5) == y_bin)
+                accuracy = np.mean((F_logistic(X_test, theta) >= 0.5) == y_test)
+                prediction_result = "True: " + target if prediction_result == 1 else "False: Not " + target
 
                 context.update({
                     'prediction': prediction_result,
@@ -328,12 +351,51 @@ def prediction(request):
                     'model_type': 'Classification Logistique'
                 })
 
+            # Visualisation avec toutes les données du CSV
+            if visualisation and len(selected_features) in [1, 2]:
+                fig = plt.figure()
+                X_vis = X[:, 1:]  # X complet (avec biais retiré), pas X_test
+
+                if model_type == 'regression':
+                    y_pred_all = F_regression(X, theta)
+                    plt.scatter(X_vis[:, 0], y, color='blue', label='Valeurs réelles')
+                    plt.scatter(X_vis[:, 0], y_pred_all, color='red', label='Valeurs prédites')
+                    plt.title("Régression Linéaire (ensemble complet)")
+                    plt.xlabel(selected_features[0])
+                    plt.ylabel("Valeur cible")
+                    plt.legend()
+
+                elif model_type == 'classification' and len(selected_features) == 2:
+                    plt.xlabel(selected_features[0])
+                    plt.ylabel(selected_features[1])
+                    plt.plot(X_vis[:, 0], X_vis[:, 1], 'x', label='Données CSV')
+
+                    theta0, theta1, theta2 = theta[0], theta[1], theta[2]
+                    x_vals = np.linspace(X_vis[:, 0].min(), X_vis[:, 0].max(), 100)
+                    y_vals = -(theta1 * x_vals + theta0) / theta2
+
+                    plt.plot(x_vals, y_vals, color='magenta',
+                            label=r"Frontière de décision : $G(X) = a_1 x_1 + a_2 x_2 + b = 0$")
+                    plt.title("Classification Logistique (ensemble complet)")
+                    plt.legend()
+
+                plt.tight_layout()
+                vis_path = os.path.join('static', 'prediction_visualisation.png')
+                if not os.path.exists('static'):
+                    os.makedirs('static')
+                plt.savefig(vis_path)
+                plt.close()
+                context['plot_url'] = '/' + vis_path
+                context['show_heatmap'] = False
+
+
             context.update({
                 'columns': columns,
                 'selected_features': selected_features,
                 'target': target,
                 'alpha': alpha,
                 'iterations': iterations,
+                'test_size': test_size,
                 'input_values': input_values
             })
 
