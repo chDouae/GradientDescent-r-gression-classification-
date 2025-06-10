@@ -317,6 +317,21 @@ def prediction(request):
                 prediction_result = F_regression(input_with_bias, theta)
                 y_pred = F_regression(X_test, theta)
                 r2 = 1 - (np.sum((y_test - y_pred) ** 2) / np.sum((y_test - np.mean(y_test)) ** 2))
+                # 🔽 Visualisation Prédictions vs Valeurs Réelles
+                plt.figure(figsize=(8, 6))
+                plt.scatter(y_test, y_pred, color='dodgerblue', alpha=0.7, label='Prédictions')
+                plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'k--', lw=2, label='Idéal')
+                plt.xlabel("Valeurs réelles")
+                plt.ylabel("Prédictions")
+                plt.title("Prédictions vs Réalité (Set de Test)")
+                plt.legend()
+                plt.grid(True)
+                vis_r2_path = os.path.join('static', 'r2_scatter.png')
+                if not os.path.exists('static'):
+                    os.makedirs('static')
+                plt.savefig(vis_r2_path)
+                plt.close()
+                context['r2_plot_url'] = '/' + vis_r2_path
 
                 context.update({
                     'prediction': prediction_result,

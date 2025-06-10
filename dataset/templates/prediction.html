@@ -3,45 +3,443 @@
 <head>
     <meta charset="UTF-8" />
     <title>Prédiction avec Gradient Descent</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet" />
     <style>
-        body {
-            padding-top: 2rem;
-            padding-bottom: 3rem;
-            background: #f8f9fa;
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --success-gradient: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --text-primary: #2d3748;
+            --text-secondary: #718096;
+            --border-color: rgba(255, 255, 255, 0.2);
+            --shadow-soft: 0 10px 40px rgba(0, 0, 0, 0.1);
+            --shadow-hover: 0 20px 60px rgba(0, 0, 0, 0.15);
         }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--text-primary);
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 118, 117, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(79, 172, 254, 0.2) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .floating-shapes {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+        }
+
+        .shape {
+            position: absolute;
+            opacity: 0.1;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .shape:nth-child(1) {
+            top: 20%;
+            left: 10%;
+            width: 80px;
+            height: 80px;
+            background: var(--accent-gradient);
+            border-radius: 50%;
+            animation-delay: 0s;
+        }
+
+        .shape:nth-child(2) {
+            top: 60%;
+            right: 10%;
+            width: 120px;
+            height: 120px;
+            background: var(--secondary-gradient);
+            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+            animation-delay: 2s;
+        }
+
+        .shape:nth-child(3) {
+            bottom: 20%;
+            left: 20%;
+            width: 60px;
+            height: 60px;
+            background: var(--success-gradient);
+            transform: rotate(45deg);
+            animation-delay: 4s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+        }
+
         .container {
             max-width: 1200px;
         }
-        .result-card {
-            margin-top: 1.5rem;
+
+        h1 {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 2rem;
+            font-weight: 700;
+            text-align: center;
+            font-size: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
         }
+
+        .main-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            box-shadow: var(--shadow-soft);
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .main-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary-gradient);
+        }
+
+        .main-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .section-card {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .section-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--accent-gradient);
+        }
+
+        .section-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        h4 {
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+        }
+
+        .form-label {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .form-select, .form-control {
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+            margin-bottom: 1rem;
+        }
+
+        .form-select:focus, .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+            background: white;
+        }
+
+        .checkbox-container {
+            max-height: 180px;
+            overflow-y: auto;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.7);
+            margin-bottom: 1rem;
+        }
+
+        .form-check-input {
+            width: 1.2em;
+            height: 1.2em;
+            margin-right: 0.5rem;
+            cursor: pointer;
+            border: 2px solid #667eea;
+            border-radius: 6px;
+        }
+
+        .form-check-input:checked {
+            background: var(--primary-gradient);
+            border-color: transparent;
+        }
+
+        .form-check-label {
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+        }
+
+        .form-check {
+            margin-bottom: 0.75rem;
+        }
+
+        .form-check-inline {
+            margin-right: 1.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 12px;
+            padding: 1.25rem 2rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+            width: 100%;
+            margin-top: 1rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-outline-secondary {
+            border: 2px solid #667eea;
+            color: #667eea;
+            background: transparent;
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-secondary:hover {
+            background: var(--primary-gradient);
+            border-color: transparent;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .alert-success {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border: 1px solid #a3d9a4;
+            border-radius: 16px;
+            color: #155724;
+            padding: 2rem;
+            margin-top: 2rem;
+            border-left: 4px solid #28a745;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .alert-success h3 {
+            background: var(--success-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .alert-success ul {
+            margin-bottom: 0;
+        }
+
+        .alert-success li {
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
         #heatmap-container {
             margin-top: 1rem;
             text-align: center;
         }
+
         #heatmap-image {
-            width: 600px;
-            max-width: none;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 600px;
+            border-radius: 16px;
+            box-shadow: var(--shadow-soft);
+            transition: all 0.3s ease;
+        }
+
+        #heatmap-image:hover {
+            transform: scale(1.02);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .visualization-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            box-shadow: var(--shadow-soft);
+            margin-top: 2rem;
+        }
+
+        .visualization-card h5 {
+            background: var(--success-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .visualization-card img {
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .animate-in {
+            animation: slideInUp 0.6s ease-out;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid transparent;
+            border-top: 2px solid currentColor;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .section-card {
+                padding: 1.5rem;
+                margin-bottom: 1rem;
+            }
+
+            .row > .col-md-4,
+            .row > .col-md-8 {
+                margin-bottom: 1rem;
+            }
         }
     </style>
 </head>
 <body>
-<div class="container">
-    <h1 class="mb-4 text-primary text-center">Prédiction avec Gradient Descent</h1>
+
+<div class="floating-shapes">
+    <div class="shape"></div>
+    <div class="shape"></div>
+    <div class="shape"></div>
+</div>
+
+<div class="container animate-in">
+    <h1>
+        <i class="bi bi-graph-up-arrow"></i>
+        Prédiction avec Gradient Descent
+    </h1>
 
     <div class="row mb-3 align-items-stretch">
         <!-- Colonne gauche -->
         <div class="col-md-4">
-            <div class="card shadow-sm p-3 h-100">
+            <div class="main-card section-card p-3 h-100">
                 <form method="post" novalidate>
                     {% csrf_token %}
-                    <h4 class="mb-3">Sélection des variables</h4>
+                    <h4>
+                        <i class="bi bi-sliders"></i>
+                        Sélection des variables
+                    </h4>
 
-                    <label class="form-label fw-semibold">Features (colonnes explicatives) :</label>
-                    <div class="mb-3" style="max-height: 180px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.3rem; padding: 0.5rem;">
+                    <label class="form-label">
+                        <i class="bi bi-check-square"></i>
+                        Features (colonnes explicatives) :
+                    </label>
+                    <div class="checkbox-container">
                         {% for col in columns %}
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="feature_{{ forloop.counter }}" name="features" value="{{ col }}"
@@ -51,7 +449,10 @@
                         {% endfor %}
                     </div>
 
-                    <label for="target" class="form-label fw-semibold mt-3">Target (colonne à prédire) :</label>
+                    <label for="target" class="form-label mt-3">
+                        <i class="bi bi-bullseye"></i>
+                        Target (colonne à prédire) :
+                    </label>
                     <select id="target" name="target" required class="form-select mb-3">
                         <option value="" disabled {% if not target %}selected{% endif %}>-- Choisir la cible --</option>
                         {% for col in columns %}
@@ -59,10 +460,16 @@
                         {% endfor %}
                     </select>
 
-                    <div class="card shadow-sm p-3 mb-4">
-                        <h4 class="mb-3">Paramètres du modèle</h4>
+                    <div class="section-card p-3 mb-4">
+                        <h4>
+                            <i class="bi bi-gear-fill"></i>
+                            Paramètres du modèle
+                        </h4>
 
-                        <label class="form-label fw-semibold">Type de modèle :</label>
+                        <label class="form-label">
+                            <i class="bi bi-diagram-3"></i>
+                            Type de modèle :
+                        </label>
                         <div class="mb-3">
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="radio" id="regression" name="model_type" value="regression"
@@ -77,66 +484,87 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="alpha" class="form-label fw-semibold">Learning rate (alpha) :</label>
+                            <label for="alpha" class="form-label">
+                                <i class="bi bi-speedometer2"></i>
+                                Learning rate (alpha) :
+                            </label>
                             <input id="alpha" name="alpha" type="number" min="0" max="1" step="0.0001" class="form-control" required
                                 value="{{ alpha|default:'0.01' }}" placeholder="Ex: 0.01" />
                         </div>
 
                         <div class="mb-3">
-                            <label for="iterations" class="form-label fw-semibold">Nombre d'itérations :</label>
+                            <label for="iterations" class="form-label">
+                                <i class="bi bi-arrow-repeat"></i>
+                                Nombre d'itérations :
+                            </label>
                             <input id="iterations" name="iterations" type="number" min="1" max="10000" class="form-control" required
                                 value="{{ iterations|default:'1000' }}" placeholder="Ex: 1000" />
                         </div>
 
-                        <!-- Ajout test_size -->
                         <div class="mb-3">
-                            <label for="test_size" class="form-label fw-semibold">Taille du jeu de test :</label>
+                            <label for="test_size" class="form-label">
+                                <i class="bi bi-pie-chart"></i>
+                                Taille du jeu de test :
+                            </label>
                             <input type="number" name="test_size" id="test_size" class="form-control" step="0.01" min="0.05" max="0.95"
                                    value="{{ test_size|default:'0.2' }}">
                         </div>
 
-                        <!-- Ajout show_visualisation -->
                         <div class="form-check mb-4">
                             <input class="form-check-input" type="checkbox" name="show_visualisation" id="show_visualisation"
                                    {% if plot_url %}checked{% endif %}>
                             <label class="form-check-label" for="show_visualisation">
+                                <i class="bi bi-graph-up"></i>
                                 Afficher le graphe de prédiction / frontière
                             </label>
                         </div>
                     </div>
 
-                    <div class="card shadow-sm p-3 mb-4">
-                        <label class="form-label fw-semibold">Entrer les valeurs des features sélectionnées :</label>
+                    <div class="section-card p-3 mb-4">
+                        <label class="form-label">
+                            <i class="bi bi-input-cursor-text"></i>
+                            Entrer les valeurs des features sélectionnées :
+                        </label>
                         <div id="dynamic-inputs"></div>
                     </div>
 
                     <input type="hidden" name="action" value="predict" />
-                    <button type="submit" class="btn btn-primary w-100 mb-4">Prédire</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-play-circle-fill me-2"></i>
+                        <span class="btn-text">Prédire</span>
+                        <span class="loading-spinner"></span>
+                    </button>
                 </form>
             </div>
         </div>
 
         <!-- Colonne droite -->
         <div class="col-md-8">
-            <div class="card shadow-sm p-3 h-100 d-flex flex-column justify-content-start align-items-center">
-                <button id="btnHeatmap" class="btn btn-outline-secondary mb-3" type="button">Afficher la heatmap</button>
+            <div class="main-card section-card p-3 h-100 d-flex flex-column justify-content-start align-items-center">
+                <button id="btnHeatmap" class="btn btn-outline-secondary mb-3" type="button">
+                    <i class="bi bi-grid-3x3-gap-fill me-2"></i>
+                    Afficher la heatmap
+                </button>
 
                 <div id="heatmap-container" style="display:none; max-width: 100%;">
-                    <h2 class="h5 mb-3 text-center">Matrice de corrélation</h2>
-                    <img id="heatmap-image" alt="Heatmap" class="img-fluid rounded shadow-sm" style="width: 100%; max-width: 600px;" />
+                    <h2 class="h5 mb-3 text-center" style="background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 600;">
+                        <i class="bi bi-grid-3x3-gap me-2"></i>
+                        Matrice de corrélation
+                    </h2>
+                    <img id="heatmap-image" alt="Heatmap" class="img-fluid rounded shadow-sm" />
                     <p id="heatmap-loading" class="text-muted text-center" style="display:none;">Chargement...</p>
                 </div>
 
-                <!-- Ajout visualisation -->
                 {% if plot_url %}
-                <div class="mt-4 w-100 d-flex justify-content-center">
-                    <div class="card shadow-sm p-3" style="max-width: 700px; width: 100%;">
-                        <h5 class="text-center text-success mb-3">Visualisation du modèle</h5>
-                        <img src="{{ plot_url }}" alt="Graphe de visualisation" class="img-fluid rounded border" />
-                        <p class="text-muted text-center mt-2">
-                            Ce graphique affiche les valeurs réelles et prédites (régression) ou les classes avec la frontière de décision (classification).
-                        </p>
-                    </div>
+                <div class="visualization-card w-100">
+                    <h5 class="text-center mb-3">
+                        <i class="bi bi-bar-chart-line me-2"></i>
+                        Visualisation du modèle
+                    </h5>
+                    <img src="{{ plot_url }}" alt="Graphe de visualisation" class="img-fluid rounded border w-100" />
+                    <p class="text-muted text-center mt-2">
+                        Ce graphique affiche les valeurs réelles et prédites (régression) ou les classes avec la frontière de décision (classification).
+                    </p>
                 </div>
                 {% endif %}
             </div>
@@ -144,8 +572,11 @@
     </div>
 
     {% if prediction is not none %}
-    <div class="alert alert-success result-card">
-        <h3>Résultat de la prédiction :</h3>
+    <div class="alert alert-success animate-in">
+        <h3>
+            <i class="bi bi-check-circle-fill me-2"></i>
+            Résultat de la prédiction :
+        </h3>
         <ul class="mb-0">
             <li><strong>Modèle :</strong> {{ model_type }}</li>
             <li><strong>Valeur prédite :</strong> {{ prediction }}</li>
@@ -156,13 +587,16 @@
             <li><strong>Accuracy :</strong> {{ accuracy|floatformat:2 }}</li>
             <li><strong>Probabilité (classification) :</strong> {{ probability|floatformat:2 }}</li>
             {% endif %}
+                {% if r2_plot_url %}
+        <h3>Graphique Prédictions vs Valeurs Réelles</h3>
+        <img src="{{ r2_plot_url }}" alt="Prédictions vs Réalité">
+    {% endif %}
         </ul>
     </div>
     {% endif %}
 
 </div>
 
-<!-- JavaScript identique à ton code -->
 <script>
     const btnHeatmap = document.getElementById('btnHeatmap');
     const heatmapContainer = document.getElementById('heatmap-container');
@@ -209,8 +643,8 @@
                 const inputId = 'feature_value_' + slugify(featureName);
                 const label = document.createElement('label');
                 label.setAttribute('for', inputId);
-                label.className = 'form-label mt-2 fw-semibold';
-                label.textContent = featureName;
+                label.className = 'form-label mt-2';
+                label.innerHTML = `<i class="bi bi-input-cursor me-2"></i>${featureName}`;
 
                 const input = document.createElement('input');
                 input.type = 'number';
@@ -218,7 +652,7 @@
                 input.id = inputId;
                 input.required = true;
                 input.step = 'any';
-                input.min   = 0;
+                input.min = 0;
                 input.className = 'form-control mb-2';
 
                 if (initialInputValues[inputId]) {
@@ -237,6 +671,8 @@
     });
 
     const form = document.querySelector('form');
+    const submitBtn = document.querySelector('.btn-primary');
+
     form.addEventListener('submit', e => {
         const featuresChecked = Array.from(document.querySelectorAll('input[name="features"]:checked'));
         const dynamicInputs = dynamicInputsDiv.querySelectorAll('input[type="number"]');
@@ -250,13 +686,68 @@
         for (const input of dynamicInputs) {
             if (!input.value.trim()) {
                 e.preventDefault();
-                alert(`Veuillez saisir une valeur pour ${input.previousElementSibling.textContent}.`);
+                alert(`Veuillez saisir une valeur pour ${input.previousElementSibling.textContent.replace('🔤 ', '')}.`);
                 return;
             }
         }
+
+        // Animation du bouton
+        const btnText = submitBtn.querySelector('.btn-text');
+        const spinner = submitBtn.querySelector('.loading-spinner');
+        
+        if (btnText && spinner) {
+            btnText.style.display = 'none';
+            spinner.style.display = 'inline-block';
+        }
+        submitBtn.disabled = true;
+    });
+
+    // Amélioration de l'expérience utilisateur
+    document.querySelectorAll('.form-select, .form-control').forEach(input => {
+        input.addEventListener('change', function() {
+            this.style.borderColor = '#28a745';
+            this.style.backgroundColor = 'rgba(40, 167, 69, 0.1)';
+            
+            setTimeout(() => {
+                this.style.borderColor = '#e2e8f0';
+                this.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+            }, 1000);
+        });
+    });
+
+    // Effet sur les checkboxes
+    document.querySelectorAll('.form-check-input').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const label = this.nextElementSibling;
+            if (this.checked) {
+                label.style.color = '#667eea';
+                label.style.fontWeight = '600';
+            } else {
+                label.style.color = 'var(--text-primary)';
+                label.style.fontWeight = '500';
+            }
+        });
+    });
+
+    // Animation d'entrée progressive
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('animate-in');
+            }
+        });
+    }, observerOptions);
+
+    document.querySelectorAll('.section-card, .alert-success').forEach(element => {
+        observer.observe(element);
     });
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -3,156 +3,791 @@
 <head>
     <meta charset="UTF-8" />
     <title>Feature Engineering</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet" />
     <style>
-        body {
-            background-color: #f0f2f5;
-            color: #212529;
-            padding: 2rem 1rem;
-            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --success-gradient: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --text-primary: #2d3748;
+            --text-secondary: #718096;
+            --border-color: rgba(255, 255, 255, 0.2);
+            --shadow-soft: 0 10px 40px rgba(0, 0, 0, 0.1);
+            --shadow-hover: 0 20px 60px rgba(0, 0, 0, 0.15);
         }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--text-primary);
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 118, 117, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(79, 172, 254, 0.2) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+                /* Navigation Styles */
+        .navbar-custom {
+            background: rgba(255, 255, 255, 0.1) !important;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.4rem;
+            color: white !important;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-link {
+            font-weight: 500;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            margin: 0 0.3rem;
+            border-radius: 12px;
+            padding: 0.7rem 1.2rem !important;
+            color: rgba(255, 255, 255, 0.8) !important;
+        }
+        
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+            color: white !important;
+            box-shadow: 0 4px 20px rgba(255, 255, 255, 0.1);
+        }
+        
+        .nav-link.active {
+            background: rgba(255, 255, 255, 0.2) !important;
+            font-weight: 600;
+            color: white !important;
+            box-shadow: 0 4px 20px rgba(255, 255, 255, 0.2);
+        }
+        
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 3px;
+            background: linear-gradient(90deg, #ffd700, #ff6b6b);
+            border-radius: 2px;
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+        }
+        
+        .nav-step-number {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-right: 0.7rem;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link.active .nav-step-number {
+            background: linear-gradient(135deg, #ffd700, #ff6b6b);
+            color: white;
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+        }
+        
+        .container {
+            position: relative;
+            z-index: 1;
+        }
+        
+        header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+            border-radius: 20px;
+            margin: 2rem 0 3rem 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+        }
+        
+        header h1 {
+            font-weight: 700;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        header .lead {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border-radius: 20px;
+            margin-bottom: 2rem;
+            padding: 2.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.3), transparent);
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
+        
+        .section-title {
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+            font-size: 1.3rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .form-control {
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            border-radius: 12px;
+            padding: 0.8rem 1rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+        
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            background: white;
+        }
+
+        .floating-shapes {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+        }
+
+        .shape {
+            position: absolute;
+            opacity: 0.1;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .shape:nth-child(1) {
+            top: 20%;
+            left: 10%;
+            width: 80px;
+            height: 80px;
+            background: var(--accent-gradient);
+            border-radius: 50%;
+            animation-delay: 0s;
+        }
+
+        .shape:nth-child(2) {
+            top: 60%;
+            right: 10%;
+            width: 120px;
+            height: 120px;
+            background: var(--secondary-gradient);
+            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+            animation-delay: 2s;
+        }
+
+        .shape:nth-child(3) {
+            bottom: 20%;
+            left: 20%;
+            width: 60px;
+            height: 60px;
+            background: var(--success-gradient);
+            transform: rotate(45deg);
+            animation-delay: 4s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+        }
+
         .container {
             max-width: 900px;
-            background-color: #fff;
-            padding: 2rem 2.5rem;
-            border-radius: 0.75rem;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            padding: 3rem;
+            border-radius: 24px;
+            box-shadow: var(--shadow-soft);
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
         }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary-gradient);
+        }
+
         h1 {
-            color: #0d6efd;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 2rem;
             font-weight: 700;
             text-align: center;
-            margin-bottom: 2rem;
+            font-size: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
         }
+
         h3 {
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
             margin-top: 2rem;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
             font-weight: 600;
-            color: #0d6efd;
-            border-bottom: 2px solid #0d6efd;
-            padding-bottom: 0.3rem;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid rgba(102, 126, 234, 0.3);
         }
-        .form-switch {
-            padding-left: 2.5rem;
+
+        .alert-success {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border: 1px solid #a3d9a4;
+            border-radius: 12px;
+            color: #155724;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-left: 4px solid #28a745;
+        }
+
+        .section-card {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            transition: all 0.3s ease;
             position: relative;
-            margin-bottom: 0.5rem;
+            overflow: hidden;
         }
-        .form-switch input[type="checkbox"] {
+
+        .section-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--accent-gradient);
+        }
+
+        .section-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .form-label {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .form-select {
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
             cursor: pointer;
+            margin-bottom: 1rem;
         }
-        .switch-label {
-            cursor: pointer;
+
+        .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+            background: white;
         }
+
+        .btn-group-select {
+            margin-bottom: 1rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-group-select .btn {
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-primary {
+            border: 2px solid #667eea;
+            color: #667eea;
+            background: transparent;
+        }
+
+        .btn-outline-primary:hover {
+            background: var(--primary-gradient);
+            border-color: transparent;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .btn-outline-secondary {
+            border: 2px solid #6c757d;
+            color: #6c757d;
+            background: transparent;
+        }
+
+        .btn-outline-secondary:hover {
+            background: #6c757d;
+            border-color: transparent;
+            color: white;
+            transform: translateY(-1px);
+        }
+
         .checkbox-columns {
-            max-height: 180px;
+            max-height: 200px;
             overflow-y: auto;
-            border: 1px solid #ced4da;
-            border-radius: 0.375rem;
-            padding: 1rem;
-            background-color: #fafafa;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.7);
             display: flex;
             flex-wrap: wrap;
             gap: 1rem 2rem;
+            margin-bottom: 1rem;
         }
+
         .checkbox-columns > div {
             flex: 1 1 45%;
             min-width: 150px;
         }
-        .btn-group-select {
-            margin-bottom: 0.5rem;
+
+        .form-check-input {
+            width: 1.2em;
+            height: 1.2em;
+            margin-right: 0.5rem;
+            cursor: pointer;
+            border: 2px solid #667eea;
+            border-radius: 6px;
         }
+
+        .form-check-input:checked {
+            background: var(--primary-gradient);
+            border-color: transparent;
+        }
+
+        .form-check-label {
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+        }
+
         .summary {
             font-style: italic;
-            color: #6c757d;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            padding: 0.5rem 1rem;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .unique-values-list {
+            max-height: 160px;
+            overflow-y: auto;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.7);
             margin-bottom: 1rem;
         }
-        .unique-values-list {
-            max-height: 140px;
-            overflow-y: auto;
-            border: 1px solid #ced4da;
-            border-radius: 0.375rem;
-            padding: 1rem;
-            background-color: #fafafa;
+
+        .unique-values-list ul {
+            margin: 0;
+            padding: 0;
         }
-        .btn-submit {
+
+        .unique-values-list li {
+            margin-bottom: 0.5rem;
+            padding: 0.3rem 0;
+            border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+        }
+
+        .unique-values-list li:last-child {
+            border-bottom: none;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 12px;
+            padding: 1.25rem 2rem;
+            font-weight: 600;
+            font-size: 1.2rem;
+            width: 100%;
             margin-top: 2rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: var(--success-gradient);
+            border: none;
+            border-radius: 12px;
+            padding: 1.25rem 2rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+            width: 100%;
+            margin-top: 1.5rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(72, 187, 120, 0.4);
+            color: white;
+        }
+
+        .table-responsive {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            margin-top: 1rem;
+        }
+
+        .animate-in {
+            animation: slideInUp 0.6s ease-out;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 2rem 1.5rem;
+                margin: 1rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .section-card {
+                padding: 1.5rem;
+            }
+
+            .checkbox-columns {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .checkbox-columns > div {
+                flex: 1 1 100%;
+            }
+
+            .btn-group-select {
+                flex-direction: column;
+            }
+        }
+
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid transparent;
+            border-top: 2px solid currentColor;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>Feature Engineering</h1>
-
-    {% if message %}
-        <div class="alert alert-success" role="alert">{{ message }}</div>
-    {% endif %}
-
-    <form method="post" novalidate>
-        {% csrf_token %}
-
-        <!-- Méthode de normalisation -->
-        <h3>Colonnes numériques</h3>
-
-        <div class="mb-3">
-            <label for="normalization_method" class="form-label fw-semibold">Méthode de normalisation :</label>
-            <select name="normalization_method" id="normalization_method" class="form-select" required>
-                <option value="minmax">Min-Max</option>
-                <option value="standard">Standard (Z-score)</option>
-            </select>
-        </div>
-
-        <div class="btn-group btn-group-sm btn-group-select" role="group" aria-label="Sélection colonnes numériques">
-            <button type="button" class="btn btn-outline-primary" id="selectAllNumericBtn">Tout sélectionner</button>
-            <button type="button" class="btn btn-outline-secondary" id="deselectAllNumericBtn">Tout désélectionner</button>
-        </div>
-        <div class="checkbox-columns" id="numericColsGroup">
-            {% for col in numeric_cols %}
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" name="normalize_cols" value="{{ col }}" id="norm_{{ col }}">
-                    <label class="form-check-label switch-label" for="norm_{{ col }}">{{ col }}</label>
-                </div>
-            {% endfor %}
-        </div>
-        <p class="summary" id="numericSummary">0 colonnes sélectionnées</p>
-
-        <!-- Colonnes catégorielles -->
-        <h3>Colonnes catégorielles</h3>
-
-        <p><strong>Valeurs uniques :</strong></p>
-        <div class="unique-values-list mb-3">
-            <ul class="list-unstyled mb-0">
-                {% for col, vals in unique_values.items %}
-                    <li><strong>{{ col }}:</strong> {{ vals|join:", " }}</li>
-                {% endfor %}
+<!-- Navigation Menu -->
+<nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
+    <div class="container">
+        <a class="navbar-brand" href="#">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem;">
+                <path d="M3 3v18h18"/>
+                <path d="M7 16l4-4 4 4 6-6"/>
+            </svg>
+            ML Application
+        </a>
+        
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link active" href="{% url 'upload' %}">
+                        <span class="nav-step-number">1</span>
+                        Upload
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'preprocess' %}">
+                        <span class="nav-step-number">2</span>
+                        Prétraitement
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'feature_engineering' %}">
+                        <span class="nav-step-number">3</span>
+                        Feature Engineering
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'prediction' %}">
+                        <span class="nav-step-number">4</span>
+                        Prédiction
+                    </a>
+                </li>
             </ul>
         </div>
-
-        <div class="btn-group btn-group-sm btn-group-select" role="group" aria-label="Sélection colonnes catégorielles">
-            <button type="button" class="btn btn-outline-primary" id="selectAllCategoricalBtn">Tout sélectionner</button>
-            <button type="button" class="btn btn-outline-secondary" id="deselectAllCategoricalBtn">Tout désélectionner</button>
-        </div>
-        <div class="checkbox-columns" id="categoricalColsGroup">
-            {% for col in categorical_cols %}
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" name="dummy_cols" value="{{ col }}" id="dummy_{{ col }}">
-                    <label class="form-check-label switch-label" for="dummy_{{ col }}">{{ col }}</label>
-                </div>
-            {% endfor %}
-        </div>
-        <p class="summary" id="categoricalSummary">0 colonnes sélectionnées</p>
-
-        <button type="submit" class="btn btn-primary btn-submit w-100">Appliquer Feature Engineering</button>
-    </form>
-
-    <h3>Aperçu du dataset</h3>
-    <div class="table-responsive">
-        {{ data_preview|safe }}
     </div>
+</nav>
 
-    <a href="{% url 'prediction' %}" class="btn btn-success mt-4 w-100">Aller à la prédiction</a>
+<div class="floating-shapes">
+    <div class="shape"></div>
+    <div class="shape"></div>
+    <div class="shape"></div>
 </div>
 
+<div class="container animate-in">
+    <h1>
+        <i class="bi bi-gear-fill"></i>
+        Feature Engineering
+    </h1>
+
+    {% if message %}
+        <div class="alert alert-success" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            {{ message }}
+        </div>
+    {% endif %}
+
+    <form method="post" novalidate id="featureForm">
+        {% csrf_token %}
+
+        <!-- Section colonnes numériques -->
+        <div class="section-card animate-in">
+            <h3>
+                <i class="bi bi-bar-chart-fill"></i>
+                Colonnes numériques
+            </h3>
+
+            <div class="mb-3">
+                <label for="normalization_method" class="form-label">
+                    <i class="bi bi-sliders"></i>
+                    Méthode de normalisation :
+                </label>
+                <select name="normalization_method" id="normalization_method" class="form-select" required>
+                    <option value="minmax">📊 Min-Max</option>
+                    <option value="standard">📈 Standard (Z-score)</option>
+                </select>
+            </div>
+
+            <div class="btn-group-select" role="group" aria-label="Sélection colonnes numériques">
+                <button type="button" class="btn btn-outline-primary" id="selectAllNumericBtn">
+                    <i class="bi bi-check-all"></i>
+                    Tout sélectionner
+                </button>
+                <button type="button" class="btn btn-outline-secondary" id="deselectAllNumericBtn">
+                    <i class="bi bi-x-circle"></i>
+                    Tout désélectionner
+                </button>
+            </div>
+
+            <div class="checkbox-columns" id="numericColsGroup">
+                {% for col in numeric_cols %}
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="normalize_cols" value="{{ col }}" id="norm_{{ col }}">
+                        <label class="form-check-label switch-label" for="norm_{{ col }}">{{ col }}</label>
+                    </div>
+                {% endfor %}
+            </div>
+            <p class="summary" id="numericSummary">0 colonnes sélectionnées</p>
+        </div>
+
+        <!-- Section colonnes catégorielles -->
+        <div class="section-card animate-in" style="animation-delay: 200ms;">
+            <h3>
+                <i class="bi bi-tags-fill"></i>
+                Colonnes catégorielles
+            </h3>
+
+            <div class="mb-3">
+                <label class="form-label">
+                    <i class="bi bi-list-ul"></i>
+                    Valeurs uniques :
+                </label>
+                <div class="unique-values-list">
+                    <ul class="list-unstyled mb-0">
+                        {% for col, vals in unique_values.items %}
+                            <li><strong>{{ col }}:</strong> {{ vals|join:", " }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="btn-group-select" role="group" aria-label="Sélection colonnes catégorielles">
+                <button type="button" class="btn btn-outline-primary" id="selectAllCategoricalBtn">
+                    <i class="bi bi-check-all"></i>
+                    Tout sélectionner
+                </button>
+                <button type="button" class="btn btn-outline-secondary" id="deselectAllCategoricalBtn">
+                    <i class="bi bi-x-circle"></i>
+                    Tout désélectionner
+                </button>
+            </div>
+
+            <div class="checkbox-columns" id="categoricalColsGroup">
+                {% for col in categorical_cols %}
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="dummy_cols" value="{{ col }}" id="dummy_{{ col }}">
+                        <label class="form-check-label switch-label" for="dummy_{{ col }}">{{ col }}</label>
+                    </div>
+                {% endfor %}
+            </div>
+            <p class="summary" id="categoricalSummary">0 colonnes sélectionnées</p>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="submitBtn">
+            <i class="bi bi-play-circle-fill me-2"></i>
+            <span class="btn-text">Appliquer Feature Engineering</span>
+            <span class="loading-spinner"></span>
+        </button>
+    </form>
+
+    <!-- Aperçu du dataset -->
+    <div class="section-card animate-in" style="animation-delay: 400ms;">
+        <h3>
+            <i class="bi bi-table"></i>
+            Aperçu du dataset
+        </h3>
+        <div class="table-responsive">
+            {{ data_preview|safe }}
+        </div>
+    </div>
+
+    <a href="{% url 'prediction' %}" class="btn btn-success">
+        <i class="bi bi-arrow-right-circle me-2"></i>
+        Aller à la prédiction
+    </a>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     // Met à jour le résumé du nombre de colonnes sélectionnées dans un groupe
     function updateSummary(groupId, summaryId) {
@@ -162,7 +797,7 @@
         summary.textContent = `${count} colonne${count > 1 ? 's' : ''} sélectionnée${count > 1 ? 's' : ''}`;
     }
 
-    // Sélectionne ou désélectionne toutes les checkbox d’un groupe
+    // Sélectionne ou désélectionne toutes les checkbox d'un groupe
     function toggleAllCheckboxes(groupId, selectAll) {
         const checkboxes = document.querySelectorAll(`#${groupId} input[type="checkbox"]`);
         checkboxes.forEach(chk => chk.checked = selectAll);
@@ -203,8 +838,69 @@
         updateSummary(numericGroupId, 'numericSummary');
         updateSummary(categoricalGroupId, 'categoricalSummary');
     });
+
+    // Animation du bouton lors du submit
+    const form = document.getElementById('featureForm');
+    const submitBtn = document.getElementById('submitBtn');
+
+    if (form && submitBtn) {
+        form.addEventListener('submit', function(e) {
+            const btnText = submitBtn.querySelector('.btn-text');
+            const spinner = submitBtn.querySelector('.loading-spinner');
+            
+            if (btnText && spinner) {
+                btnText.style.display = 'none';
+                spinner.style.display = 'inline-block';
+            }
+            submitBtn.disabled = true;
+        });
+    }
+
+    // Animation d'entrée progressive pour les cartes
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('animate-in');
+            }
+        });
+    }, observerOptions);
+
+    document.querySelectorAll('.section-card').forEach(card => {
+        observer.observe(card);
+    });
+
+    // Amélioration de l'expérience utilisateur pour les selects
+    document.querySelectorAll('.form-select').forEach(select => {
+        select.addEventListener('change', function() {
+            this.style.borderColor = '#28a745';
+            this.style.backgroundColor = 'rgba(40, 167, 69, 0.1)';
+            
+            setTimeout(() => {
+                this.style.borderColor = '#e2e8f0';
+                this.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+            }, 1000);
+        });
+    });
+
+    // Effet sur les checkboxes
+    document.querySelectorAll('.form-check-input').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const label = this.nextElementSibling;
+            if (this.checked) {
+                label.style.color = '#667eea';
+                label.style.fontWeight = '600';
+            } else {
+                label.style.color = 'var(--text-primary)';
+                label.style.fontWeight = '500';
+            }
+        });
+    });
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
