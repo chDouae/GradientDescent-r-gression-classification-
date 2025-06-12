@@ -52,6 +52,7 @@
             z-index: -1;
         }
                 /* Navigation Styles */
+           /* Navigation Styles */
         .navbar-custom {
             background: rgba(255, 255, 255, 0.1) !important;
             backdrop-filter: blur(20px);
@@ -630,7 +631,7 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item">
-                    <a class="nav-link active" href="{% url 'upload' %}">
+                    <a class="nav-link " href="{% url 'upload' %}">
                         <span class="nav-step-number">1</span>
                         Upload
                     </a>
@@ -642,7 +643,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'feature_engineering' %}">
+                    <a class="nav-link active" href="{% url 'feature_engineering' %}">
                         <span class="nav-step-number">3</span>
                         Feature Engineering
                     </a>
